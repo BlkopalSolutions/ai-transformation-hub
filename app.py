@@ -7,6 +7,26 @@ from sklearn.ensemble import RandomForestRegressor
 import numpy as np
 from transformers import pipeline
 
+# Load SpaCy model with fallback
+try:
+    nlp = spacy.load("en_core_web_sm")
+except OSError:
+    st.error("SpaCy model 'en_core_web_sm' not found. Please run 'python3 -m spacy download en_core_web_sm' and restart the app.")
+    nlp = None
+
+# Load Hugging Face model
+sentiment_analyzer = pipeline("sentiment-analysis", model="distilbert-base-uncased-finetuned-sst-2-english")
+
+# Set page config
+st.set_page_config(page_title="AI Transformation Hub", layout="wide")import streamlit as st
+import pandas as pd
+import spacy
+from supabase import create_client, Client
+from sklearn.linear_model import LinearRegression
+from sklearn.ensemble import RandomForestRegressor
+import numpy as np
+from transformers import pipeline
+
 # Load SpaCy and Hugging Face models
 nlp = spacy.load("en_core_web_sm")
 sentiment_analyzer = pipeline("sentiment-analysis", model="distilbert-base-uncased-finetuned-sst-2-english")
