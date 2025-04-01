@@ -6,6 +6,7 @@ from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import RandomForestRegressor
 import numpy as np
 from transformers import pipeline
+import os
 
 # Load SpaCy model with fallback
 try:
@@ -30,10 +31,22 @@ h1 {color: #2E7D32;}
 </style>
 """, unsafe_allow_html=True)
 
-# Supabase setup
-supabase_url = st.secrets["supabase"]["url"]
-supabase_key = st.secrets["supabase"]["key"]
-supabase: Client = create_client(supabase_url, supabase_key)
+# Supabase setup with environment variable fallback
+try:
+    # Try Streamlit secrets first (for Streamlit Cloud)
+    supabase_url = st.secrets["supabase"]["url"]
+    supabase_key = st.secrets["supabase"]["key"]
+except KeyError:
+    # Fallback to environment variables for local testing
+    supabase_url = os.environ.get("SUPABASE_URL")
+    supabase_key = os.environ.get("SUPABASE_KEY")
+    if not supabase_url or not supabase_key:
+        st.error("Supabase credentials not found. Set SUPABASE_URL and SUPABASE_KEY environment variables for local testing.")
+        supabase = None
+    else:
+        supabase: Client = create_client(supabase_url, supabase_key)
+else:
+    supabase: Client = create_client(supabase_url, supabase_key)
 
 # Session state for user login
 if "logged_in" not in st.session_state:
@@ -44,26 +57,29 @@ if "logged_in" not in st.session_state:
 if not st.session_state.logged_in:
     st.title("Welcome to AI Transformation Hub")
     st.markdown("### Sign in or create an account to begin your AI journey.")
-    option = st.radio("Choose an option", ["Login", "Sign Up"])
-    username = st.text_input("Username")
-    if option == "Sign Up":
-        business_name = st.text_input("Business Name")
-        if st.button("Sign Up"):
-            try:
-                supabase.table("users").insert({"username": username, "business_name": business_name}).execute()
-                st.success("Account created! Please log in.")
-            except Exception as e:
-                st.error("Username already exists or error occurred.")
-    elif option == "Login":
-        if st.button("Login"):
-            response = supabase.table("users").select("business_name").eq("username", username).execute()
-            if response.data:
-                st.session_state.logged_in = True
-                st.session_state.username = username
-                st.session_state.business_name = response.data[0]["business_name"]
-                st.success(f"Welcome back, {username}!")
-            else:
-                st.error("Username not found.")
+    if supabase is None:
+        st.warning("Cannot proceed without Supabase connection. Please set SUPABASE_URL and SUPABASE_KEY environment variables.")
+    else:
+        option = st.radio("Choose an option", ["Login", "Sign Up"])
+        username = st.text_input("Username")
+        if option == "Sign Up":
+            business_name = st.text_input("Business Name")
+            if st.button("Sign Up"):
+                try:
+                    supabase.table("users").insert({"username": username, "business_name": business_name}).execute()
+                    st.success("Account created! Please log in.")
+                except Exception as e:
+                    st.error("Username already exists or error occurred.")
+        elif option == "Login":
+            if st.button("Login"):
+                response = supabase.table("users").select("business_name").eq("username", username).execute()
+                if response.data:
+                    st.session_state.logged_in = True
+                    st.session_state.username = username
+                    st.session_state.business_name = response.data[0]["business_name"]
+                    st.success(f"Welcome back, {username}!")
+                else:
+                    st.error("Username not found.")
 else:
     # Main app interface
     st.title(f"AI Transformation Hub - {st.session_state.business_name}")
