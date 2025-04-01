@@ -107,7 +107,27 @@ else:
             if "customer" in text_input.lower():
                 st.success("Opportunity: Automate customer support!")
             if "sales" in text_input.lower():
+                st.success("Opportunity: Predictive sales modeling!")# Phase 1: Business Discovery with Hugging Face NLP
+if phase == "Business Discovery":
+    st.header("Phase 1: Business Discovery")
+    st.markdown("#### Map your business with advanced AI insights")
+    text_input = st.text_area("Describe your business operations or paste a document")
+    if st.button("Analyze with NLP"):
+        if nlp:
+            # SpaCy for entities
+            doc = nlp(text_input)
+            entities = [(ent.text, ent.label_) for ent in doc.ents]
+            # Hugging Face for sentiment
+            sentiment = sentiment_analyzer(text_input)[0]
+            st.write("Key Insights:")
+            st.write(f"- Entities Detected: {entities}")
+            st.write(f"- Sentiment: {sentiment['label']} (Confidence: {sentiment['score']:.2f})")
+            if "customer" in text_input.lower():
+                st.success("Opportunity: Automate customer support!")
+            if "sales" in text_input.lower():
                 st.success("Opportunity: Predictive sales modeling!")
+        else:
+            st.warning("NLP analysis unavailable due to missing SpaCy model.")
 
     # Phase 2: AI Solution Matching
     elif phase == "AI Solution Matching":
